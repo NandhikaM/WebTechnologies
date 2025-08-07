@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simple Weather Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
+
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #8c94c3 0%, #142029 100%);
+            color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-weight: 600;
+            margin-top: 10px;
+            margin-bottom: 30px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        input#cityInput {
+            padding: 14px 20px;
+            font-size: 1rem;
+            border-radius: 30px;
+            border: none;
+            width: 280px;
+            max-width: 100%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            transition: box-shadow 0.3s ease;
+            outline: none;
+        }
+
+        input#cityInput:focus {
+            box-shadow: 0 0 15px #9ed0ea;
+        }
+
+        button#searchBtn {
+            margin-top: 10px;
+            margin-left: 15px;
+            padding: 14px 28px;
+            font-weight: 600;
+            font-size: 1rem;
+            border: none;
+            border-radius: 30px;
+            background-color: #000000;
+            color: white;
+            box-shadow: 0 4px 12px rgba(210, 169, 228, 0.6);
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        button#searchBtn:hover {
+            background-color: #8e5eb8;
+            box-shadow: 0 6px 18px rgba(21, 101, 192, 0.8);
+        }
+
+        #error {
+            margin-top: 15px;
+            color: #ff6b6b;
+            font-weight: 600;
+            min-height: 22px;
+            text-shadow: 0 0 5px rgba(255, 107, 107, 0.8);
+        }
+
+        #weather {
+            margin-top: 40px;
+            background: rgba(255, 255, 255, 0.12);
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        #location {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #f1f1f1;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        #mainWeatherIcon {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.4));
+        }
+
+        #temperature {
+            font-size: 3.8rem;
+            font-weight: 700;
+            margin: 5px 0 8px;
+            color: #42a5f5;
+            text-shadow: 0 1px 6px rgba(66, 165, 245, 0.9);
+        }
+
+        #condition {
+            font-size: 1.4rem;
+            font-style: italic;
+            color: #d0e7ff;
+            margin-bottom: 28px;
+            text-transform: capitalize;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        #weather p {
+            font-size: 1.1rem;
+            margin: 8px 0;
+            color: #cfd8dc;
+            font-weight: 500;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            align-items: center;
+            user-select: none;
+        }
+
+        #weather p span {
+            font-size: 1.3rem;
+        }
+
+        @media (max-width: 480px) {
+            #weather {
+                padding: 20px 20px;
+            }
+
+            #temperature {
+                font-size: 3rem;
+            }
+
+            #mainWeatherIcon {
+                width: 90px;
+                height: 90px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Weather Dashboard</h1>
+    <input type="text" id="cityInput" placeholder="Enter city name" />
+    <button id="searchBtn">Search</button>
+    <div id="error"></div>
+
+    <div id="weather">
+        <h2 id="location"></h2>
+        <img id="mainWeatherIcon" alt="" />
+        <p id="temperature"></p>
+        <p id="condition"></p>
+        <p>Wind: <span id="windSpeed"></span></p>
+        <p>Humidity: <span id="humidity"></span></p>
+        <p>Visibility: <span id="visibility"></span></p>
+    </div>
+
+    <script>
+        const apiKey = "YOUR_API_KEY"; // Replace with your actual API key
+
+        const cityInput = document.getElementById("cityInput");
+        const searchBtn = document.getElementById("searchBtn");
+        const errorEl = document.getElementById("error");
+
+        const temperatureEl = document.getElementById("temperature");
+        const conditionEl = document.getElementById("condition");
+        const locationEl = document.getElementById("location");
+        const mainWeatherIcon = document.getElementById("mainWeatherIcon");
+        const windSpeedEl = document.getElementById("windSpeed");
+        const humidityEl = document.getElementById("humidity");
+        const visibilityEl = document.getElementById("visibility");
+
+        function mpsToKmh(speed) {
+            return (speed * 3.6).toFixed(1);
+        }
+
+        async function getWeather(city) {
+            errorEl.textContent = "";
+            try {
+                const res = await fetch(
+                    `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`
+                );
+                if (!res.ok) throw new Error("City not found");
+
+                const data = await res.json();
+
+                locationEl.textContent = `${data.name}, ${data.sys.country}`;
+                temperatureEl.textContent = `Temperature: ${Math.round(data.main.temp)} °C`;
+                conditionEl.textContent = `Condition: ${data.weather[0].description}`;
+                mainWeatherIcon.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+                mainWeatherIcon.alt = data.weather[0].description;
+                windSpeedEl.textContent = `${mpsToKmh(data.wind.speed)} km/h`;
+                humidityEl.textContent = `${data.main.humidity}%`;
+                visibilityEl.textContent = data.visibility ? `${(data.visibility / 1000).toFixed(1)} km` : "N/A";
+            } catch (error) {
+                errorEl.textContent = error.message;
+                locationEl.textContent = "";
+                temperatureEl.textContent = "";
+                conditionEl.textContent = "";
+                mainWeatherIcon.src = "";
+                windSpeedEl.textContent = "";
+                humidityEl.textContent = "";
+                visibilityEl.textContent = "";
+            }
+        }
+
+        searchBtn.addEventListener("click", () => {
+            const city = cityInput.value.trim();
+            if (city) {
+                getWeather(city);
+            } else {
+                errorEl.textContent = "Please enter a city name.";
+            }
+        });
+    </script>
+</body>
+
+</html>
